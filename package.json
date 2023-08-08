@@ -19,7 +19,7 @@
   "homepage": "https://github.com/jsck45/employee-tracker#readme",
   "dependencies": {
     "express": "^4.18.2",
-    "inquirer": "^8.2.6",
+    "inquirer": "^8.2.4",
     "mysql2": "^3.6.0"
   }
 }
