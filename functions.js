@@ -48,13 +48,12 @@ const functions = {
       
           console.log(table.toString());
           console.log('\n'); 
-          // After displaying the table, prompt the user back to the main menu
           promptUserFunction();
         });
       },
     
-      addEmployee: (promptUserFunction) => {
-        // Fetch the list of roles from the database
+    addEmployee: (promptUserFunction) => {
+
         db.query('SELECT id, title FROM role', function (err, roleResults) {
           if (err) {
             console.error('Error fetching roles:', err);
@@ -81,7 +80,7 @@ const functions = {
             inquirerPrompts.addEmployeePrompt(roleChoices, managerChoices).then((answers) => {
               const { first_name, last_name, role_id, manager_id } = answers;
       
-              // Find the actual role_id associated with the selected role title
+              // Find the role_id associated with the selected role title
               const selectedRole = roleResults.find((role) => role.title === role_id);
               if (!selectedRole) {
                 console.error('Selected role not found.');
@@ -109,7 +108,7 @@ const functions = {
       },
       
       
-      updateEmployeeRole: (promptUserFunction) => {
+    updateEmployeeRole: (promptUserFunction) => {
         db.query(
           'SELECT e.id, e.first_name, e.last_name, r.title FROM employee e INNER JOIN role r ON e.role_id = r.id',
           function (err, employeeResults) {
@@ -137,7 +136,6 @@ const functions = {
                 .then((answers) => {
                   const { employee_id, new_role_id } = answers;
       
-                  // Find the actual role_id associated with the selected role title
                   const selectedRole = roleResults.find((role) => role.title === new_role_id);
                   if (!selectedRole) {
                     console.error('Selected role not found.');
@@ -166,8 +164,7 @@ const functions = {
         );
       },
       
-
-      viewAllRoles: (promptUserFunction) => {
+    viewAllRoles: (promptUserFunction) => {
         db.query('SELECT * FROM role', function (err, results) {
           if (err) {
             console.error('Error fetching roles:', err);
@@ -179,7 +176,7 @@ const functions = {
       
           const table = new Table({
             head: ['ID', 'Title', 'Salary', 'Department ID'],
-            colWidths: [5, 20, 15, 15], // Adjust these widths as needed
+            colWidths: [5, 20, 15, 15], 
             wordWrap: true,
           });
       
@@ -193,7 +190,7 @@ const functions = {
         });
       },
 
-      addRole: (promptUserFunction) => {
+    addRole: (promptUserFunction) => {
         db.query('SELECT id, name FROM department', function (err, departmentResults) {
           if (err) {
             console.error('Error fetching departments:', err);
@@ -227,7 +224,7 @@ const functions = {
         });
       },     
 
-      viewAllDepartments: (promptUserFunction) => {
+    viewAllDepartments: (promptUserFunction) => {
         db.query('SELECT * FROM department', function (err, results) {
           if (err) {
             console.error('Error fetching departments:', err);
@@ -238,7 +235,7 @@ const functions = {
       
           const table = new Table({
             head: ['ID', 'Name'],
-            colWidths: [5, 20], // Adjust these widths as needed
+            colWidths: [5, 20], 
             wordWrap: true,
           });
       
@@ -252,7 +249,7 @@ const functions = {
         });
       },
 
-      addDepartment: (promptUserFunction) => {
+    addDepartment: (promptUserFunction) => {
         inquirerPrompts
           .addDepartmentPrompt()
           .then((answers) => {
@@ -274,39 +271,39 @@ const functions = {
           });
       },      
   
-  handleUserChoice: (choice, promptUserFunction, exitCallback) => {
-    if (choice === 'Exit') {
-      exitCallback();
-      return; // Exit the function
-    }
-  
-    switch (choice) {
-      case 'View all employees':
-        functions.viewAllEmployees(promptUserFunction);
-        break;
-      case 'Add employee':
-        functions.addEmployee(promptUserFunction);
-        break;
-      case 'Update employee role':
-        functions.updateEmployeeRole(promptUserFunction);
-        break;
-      case 'View all roles':
-        functions.viewAllRoles(promptUserFunction);
-        break;
-      case 'Add role':
-        functions.addRole(promptUserFunction);
-        break;
-      case 'View all departments':
-        functions.viewAllDepartments(promptUserFunction);
-        break;
-      case 'Add department':
-        functions.addDepartment(promptUserFunction);
-        break;
-      default:
-        console.log('Invalid choice.');
-        promptUserFunction();
-    }
-  }
-};
+    handleUserChoice: (choice, promptUserFunction, exitCallback) => {
+        if (choice === 'Exit') {
+        exitCallback();
+        return; 
+        }
+    
+        switch (choice) {
+        case 'View all employees':
+            functions.viewAllEmployees(promptUserFunction);
+            break;
+        case 'Add employee':
+            functions.addEmployee(promptUserFunction);
+            break;
+        case 'Update employee role':
+            functions.updateEmployeeRole(promptUserFunction);
+            break;
+        case 'View all roles':
+            functions.viewAllRoles(promptUserFunction);
+            break;
+        case 'Add role':
+            functions.addRole(promptUserFunction);
+            break;
+        case 'View all departments':
+            functions.viewAllDepartments(promptUserFunction);
+            break;
+        case 'Add department':
+            functions.addDepartment(promptUserFunction);
+            break;
+        default:
+            console.log('Invalid choice.');
+            promptUserFunction();
+        }
+        }
+    };
 
     module.exports = functions;

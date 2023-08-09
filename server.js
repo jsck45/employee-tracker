@@ -16,10 +16,11 @@ db.connect((err) => {
     console.error('Error connecting to the database:', err);
     process.exit(1);
   }
+
   // Start the server
   app.listen(PORT, () => {
     console.log('\nNow listening on port', PORT);
-    startApp(); // Call startApp() after the server starts listening
+    startApp();
   });
 });
 
@@ -29,10 +30,8 @@ function promptUser() {
     functions.handleUserChoice(answers.action, () => {
       setTimeout(() => {
         promptUser();
-      }, 1000); // Adjust the delay as needed
-        
+      }, 1000);
     }, () => {
-      // Close the database connection and exit the process
       db.end((err) => {
         if (err) {
           console.error('Error closing database connection:', err);
@@ -45,14 +44,11 @@ function promptUser() {
   });
 }
 
-
-
 function startApp() {
   console.log('\nWelcome to the Employee Management System!\n');
   promptUser();
 }
 
-// Default response for any other request (Not Found)
 app.use((req, res) => {
   res.status(404).end();
 });
