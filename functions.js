@@ -25,24 +25,42 @@ const functions = {
         });  
       },
   
-    addEmployee: () => {
+      addEmployee: () => {
         inquirerPrompts.addEmployeePrompt().then((answers) => {
-          db.query(
-            'INSERT INTO employee (first_name, last_name, role_id) VALUES (?, ?, ?)',
-            [answers.first_name, answers.last_name, answers.role_id],
-            function (err, results) {
-              if (err) {
-                console.error('Error adding employee:', err);
-              } else {
-                console.log('Employee added successfully!');
-                console.log(results);
-              }
+          const { first_name, last_name, role_id } = answers;
+      
+          // Retrieve the role ID based on the selected role title
+          db.query('SELECT id FROM role WHERE title = ?', [role_id], function (err, roleResults) {
+            if (err) {
+              console.error('Error fetching role ID:', err);
+              return;
             }
-          );
+      
+            if (roleResults.length === 0) {
+              console.error('Role not found:', role_id);
+              return;
+            }
+      
+            const roleId = roleResults[0].id;
+      
+            // Insert the employee with the correct role ID
+            db.query(
+              'INSERT INTO employee (first_name, last_name, role_id) VALUES (?, ?, ?)',
+              [first_name, last_name, roleId],
+              function (err, results) {
+                if (err) {
+                  console.error('Error adding employee:', err);
+                } else {
+                  console.log('Employee added successfully!');
+                  console.log(results);
+                }
+              }
+            );
+          });
         }).catch((error) => {
           console.error('Error occurred:', error);
         });
-      },
+      },      
 
       updateEmployeeRole: () => {
         db.query(
@@ -52,30 +70,37 @@ const functions = {
               console.error('Error fetching employees:', err);
               return;
             }
-    
+      
             // Fetch the list of roles from the database
             db.query('SELECT id, title FROM role', function (err, roleResults) {
               if (err) {
                 console.error('Error fetching roles:', err);
                 return;
               }
-    
+      
               const employeeChoices = employeeResults.map((employee) => ({
                 name: `${employee.first_name} ${employee.last_name} - ${employee.title}`,
                 value: employee.id,
               }));
-    
+      
               const roleChoices = roleResults.map((role) => role.title);
-    
+      
               inquirerPrompts
                 .updateEmployeeRolePrompt(employeeChoices, roleChoices)
                 .then((answers) => {
                   const { employee_id, new_role_id } = answers;
-    
+      
+                  // Find the actual role_id associated with the selected role title
+                  const selectedRole = roleResults.find((role) => role.title === new_role_id);
+                  if (!selectedRole) {
+                    console.error('Selected role not found.');
+                    return;
+                  }
+      
                   // Update the employee's role in the database
                   db.query(
                     'UPDATE employee SET role_id = ? WHERE id = ?',
-                    [new_role_id, employee_id],
+                    [selectedRole.id, employee_id],
                     function (err, results) {
                       if (err) {
                         console.error('Error updating employee role:', err);
@@ -92,6 +117,7 @@ const functions = {
           }
         );
       },
+      
 
       viewAllRoles: () => {
         db.query('SELECT * FROM role', function (err, results) {
@@ -196,12 +222,12 @@ const functions = {
 
       case 'Add employee':
         // Use the addEmployeePrompt from inquirerPrompts
-        inquirerPrompts.addEmployeePrompt();
+        functions.addEmployee();
         break;
 
       case 'Update employee role':
         // Use the updateEmployeeRolePrompt from inquirerPrompts
-        inquirerPrompts.updateEmployeeRolePrompt();
+        functions.updateEmployeeRole();
         break;
 
       case 'View all roles':
@@ -211,7 +237,7 @@ const functions = {
 
       case 'Add role':
         // Use the addRolePrompt from inquirerPrompts
-        inquirerPrompts.addRolePrompt();
+        functions.addRole();
         break;
 
       case 'View all departments':
@@ -221,7 +247,7 @@ const functions = {
 
       case 'Add department':
         // Use the addDepartmentPrompt from inquirerPrompts
-        inquirerPrompts.addDepartmentPrompt();
+        functions.addDepartment();
         break;
 
       default:
