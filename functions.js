@@ -6,26 +6,45 @@ const functions = {
 
     table: new Table(),
 
-    viewAllEmployees: () => {
-        db.query('SELECT * FROM employee', (err, results) => {
+    viewAllEmployees: (promptUserFunction) => {
+        const query = `
+          SELECT e.id, e.first_name, e.last_name, r.title, d.name AS department, r.salary
+          FROM employee e
+          INNER JOIN role r ON e.role_id = r.id
+          INNER JOIN department d ON r.department_id = d.id
+        `;
+    
+        db.query(query, (err, results) => {
           if (err) {
             console.error('Error fetching employees:', err);
             return;
           }
-          
-          // Clear the table data before adding new rows
-          functions.table.length = 0;
     
-          functions.table.push(['ID', 'First Name', 'Last Name', 'Role ID']);
-          results.forEach((employee) => {
-            functions.table.push([employee.id, employee.first_name, employee.last_name, employee.role_id]);
+          const table = new Table({
+            head: ['ID', 'First Name', 'Last Name', 'Title', 'Department', 'Salary'],
+            colWidths: [5, 15, 15, 20, 20, 10],
+            wordWrap: true,
           });
-          
-          console.log(functions.table.toString());
-        });  
+    
+          results.forEach((employee) => {
+            table.push([
+              employee.id,
+              employee.first_name,
+              employee.last_name,
+              employee.title,
+              employee.department,
+              employee.salary,
+            ]);
+          });
+    
+          console.log(table.toString());
+          console.log('\n'); 
+          // After displaying the table, prompt the user back to the main menu
+          promptUserFunction();
+        });
       },
-  
-      addEmployee: () => {
+    
+      addEmployee: (promptUserFunction) => {
         inquirerPrompts.addEmployeePrompt().then((answers) => {
           const { first_name, last_name, role_id } = answers;
       
@@ -53,6 +72,7 @@ const functions = {
                 } else {
                   console.log('Employee added successfully!');
                   console.log(results);
+                  promptUserFunction();
                 }
               }
             );
@@ -62,7 +82,7 @@ const functions = {
         });
       },      
 
-      updateEmployeeRole: () => {
+      updateEmployeeRole: (promptUserFunction) => {
         db.query(
           'SELECT e.id, e.first_name, e.last_name, r.title FROM employee e INNER JOIN role r ON e.role_id = r.id',
           function (err, employeeResults) {
@@ -106,6 +126,7 @@ const functions = {
                         console.error('Error updating employee role:', err);
                       } else {
                         console.log('Employee role updated successfully!');
+                        promptUserFunction();
                       }
                     }
                   );
@@ -119,7 +140,7 @@ const functions = {
       },
       
 
-      viewAllRoles: () => {
+      viewAllRoles: (promptUserFunction) => {
         db.query('SELECT * FROM role', function (err, results) {
           if (err) {
             console.error('Error fetching roles:', err);
@@ -135,10 +156,12 @@ const functions = {
           });
           
           console.log(functions.table.toString());
+          console.log('\n'); 
+          promptUserFunction();
         });
       },
 
-    addRole: () => {
+    addRole: (promptUserFunction) => {
         db.query('SELECT id, name FROM department', function (err, departmentResults) {
           if (err) {
             console.error('Error fetching departments:', err);
@@ -162,6 +185,7 @@ const functions = {
                   } else {
                     console.log('Role added successfully!');
                     console.log(results);
+                    promptUserFunction();
                   }
                 }
               );
@@ -172,7 +196,7 @@ const functions = {
         });
       },
 
-      viewAllDepartments: () => {
+      viewAllDepartments: (promptUserFunction) => {
         db.query('SELECT * FROM department', function (err, results) {
           if (err) {
             console.error('Error fetching departments:', err);
@@ -188,10 +212,12 @@ const functions = {
           });
     
           console.log(functions.table.toString());
+          console.log('\n'); 
+          promptUserFunction();
         });
       },
 
-    addDepartment: () => {
+    addDepartment: (promptUserFunction) => {
     inquirerPrompts
       .addDepartmentPrompt()
       .then((answers) => {
@@ -204,6 +230,7 @@ const functions = {
             } else {
               console.log('Department added successfully!');
               console.log(results);
+              promptUserFunction();
             }
           }
         );
@@ -213,48 +240,39 @@ const functions = {
       });
   },
   
-  handleUserChoice: (choice) => {
+  handleUserChoice: (choice, promptUserFunction, exitCallback) => {
+    if (choice === 'Exit') {
+      exitCallback();
+      return; // Exit the function
+    }
+  
     switch (choice) {
       case 'View all employees':
-        // Use the viewAllEmployeesPrompt from inquirerPrompts
-        functions.viewAllEmployees();
+        functions.viewAllEmployees(promptUserFunction);
         break;
-
       case 'Add employee':
-        // Use the addEmployeePrompt from inquirerPrompts
-        functions.addEmployee();
+        functions.addEmployee(promptUserFunction);
         break;
-
       case 'Update employee role':
-        // Use the updateEmployeeRolePrompt from inquirerPrompts
-        functions.updateEmployeeRole();
+        functions.updateEmployeeRole(promptUserFunction);
         break;
-
       case 'View all roles':
-        // Use the viewAllRolesPrompt from inquirerPrompts
-        functions.viewAllRoles();
+        functions.viewAllRoles(promptUserFunction);
         break;
-
       case 'Add role':
-        // Use the addRolePrompt from inquirerPrompts
-        functions.addRole();
+        functions.addRole(promptUserFunction);
         break;
-
       case 'View all departments':
-        // Use the viewAllDepartmentsPrompt from inquirerPrompts
-        functions.viewAllDepartments();
+        functions.viewAllDepartments(promptUserFunction);
         break;
-
       case 'Add department':
-        // Use the addDepartmentPrompt from inquirerPrompts
-        functions.addDepartment();
+        functions.addDepartment(promptUserFunction);
         break;
-
       default:
         console.log('Invalid choice.');
+        promptUserFunction();
     }
   }
-
-    };
+};
 
     module.exports = functions;

@@ -14,7 +14,9 @@ const prompts = {
           'View all roles',
           'Add role',
           'View all departments',
-          'Add department',        ],
+          'Add department',
+          'Exit'        
+        ],
       },
     ]);
   },

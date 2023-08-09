@@ -26,9 +26,20 @@ db.connect((err) => {
 function promptUser() {
   inquirerPrompts.start().then((answers) => {
     console.clear();
-    functions.handleUserChoice(answers.action);
+    functions.handleUserChoice(answers.action, promptUser, () => {
+      // Close the database connection and exit the process
+      db.end((err) => {
+        if (err) {
+          console.error('Error closing database connection:', err);
+        } else {
+          console.log('Database connection closed. Goodbye!');
+          process.exit(0);
+        }
+      });
+    });
   });
 }
+
 
 function startApp() {
   console.log('\nWelcome to the Employee Management System!\n');

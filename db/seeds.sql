@@ -21,7 +21,7 @@ VALUES
     ( "John", "Doe", 1),
     ( "Mike", "Chan", 2),
     ( "Ashey", "Rogriguez", 3),
-    ( "kevin", "Tupik", 4),
+    ( "Kevin", "Tupik", 4),
     ( "Kunal", "Singh", 5),
     ( "Malia", "Brown", 6),
     ( "Sarah", "Lourd", 7),
