@@ -21,41 +21,33 @@ const prompts = {
     ]);
   },
 
-  addEmployeePrompt: (managerChoices) => {
-    return inquirer.prompt([
-      {
-        type: 'input',
-        name: 'first_name',
-        message: "Enter the employee's first name:",
-      },
-      {
-        type: 'input',
-        name: 'last_name',
-        message: "Enter the employee's last name:",
-      },
-      {
-        type: 'list',
-        name: 'role_id',
-        message: "What is the employee's role?",
-        choices: [
-          'Sales Lead',
-          'Salesperson',
-          'Lead Engineer',
-          'Software Engineer',
-          'Account Manager',
-          'Accountant',
-          'Legal Team Lead',
-          'Lawyer',
-        ],
-      },
-      {
-        type: 'list',
-        name: 'manager_id',
-        message: 'Select the employee\'s manager:',
-        choices: managerChoices,
-      },
-    ]);
-  },
+  addEmployeePrompt: (roleChoices, managerChoices) => {
+  return inquirer.prompt([
+    {
+      type: 'input',
+      name: 'first_name',
+      message: "Enter the employee's first name:",
+    },
+    {
+      type: 'input',
+      name: 'last_name',
+      message: "Enter the employee's last name:",
+    },
+    {
+      type: 'list',
+      name: 'role_id',
+      message: "What is the employee's role?",
+      choices: roleChoices,
+    },
+    {
+      type: 'list',
+      name: 'manager_id',
+      message: 'Select the employee\'s manager:',
+      choices: managerChoices,
+    },
+  ]);
+},
+
 
   updateEmployeeRolePrompt: (employeeChoices, roleChoices) => {
     return inquirer.prompt([

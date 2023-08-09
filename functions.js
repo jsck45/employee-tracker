@@ -55,41 +55,43 @@ const functions = {
     
       addEmployee: (promptUserFunction) => {
         // Fetch the list of roles from the database
-        db.query('SELECT id, CONCAT(first_name, " ", last_name) AS manager_name FROM employee', function (err, managerResults) {
+        db.query('SELECT id, title FROM role', function (err, roleResults) {
           if (err) {
-            console.error('Error fetching managers:', err);
+            console.error('Error fetching roles:', err);
             return;
           }
       
-          const managerChoices = [
-            { name: 'None', value: null }, 
-            ...managerResults.map((manager) => ({
-            name: manager.manager_name,
-            value: manager.id,
-          }))
-        ];
+          const roleChoices = roleResults.map((role) => role.title);
       
-          inquirerPrompts.addEmployeePrompt(managerChoices).then((answers) => {
-            const { first_name, last_name, role_id, manager_id } = answers;
+          // Fetch the list of managers from the database
+          db.query('SELECT id, CONCAT(first_name, " ", last_name) AS manager_name FROM employee', function (err, managerResults) {
+            if (err) {
+              console.error('Error fetching managers:', err);
+              return;
+            }
       
-            // Retrieve the role ID based on the selected role title
-            db.query('SELECT id FROM role WHERE title = ?', [role_id], function (err, roleResults) {
-              if (err) {
-                console.error('Error fetching role ID:', err);
+            const managerChoices = [
+              { name: 'None', value: null },
+              ...managerResults.map((manager) => ({
+                name: manager.manager_name,
+                value: manager.id,
+              })),
+            ];
+      
+            inquirerPrompts.addEmployeePrompt(roleChoices, managerChoices).then((answers) => {
+              const { first_name, last_name, role_id, manager_id } = answers;
+      
+              // Find the actual role_id associated with the selected role title
+              const selectedRole = roleResults.find((role) => role.title === role_id);
+              if (!selectedRole) {
+                console.error('Selected role not found.');
                 return;
               }
-      
-              if (roleResults.length === 0) {
-                console.error('Role not found:', role_id);
-                return;
-              }
-      
-              const roleId = roleResults[0].id;
       
               // Insert the employee with the correct role ID and manager ID
               db.query(
                 'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)',
-                [first_name, last_name, roleId, manager_id],
+                [first_name, last_name, selectedRole.id, manager_id],
                 function (err, results) {
                   if (err) {
                     console.error('Error adding employee:', err);
@@ -99,12 +101,13 @@ const functions = {
                   }
                 }
               );
+            }).catch((error) => {
+              console.error('Error occurred:', error);
             });
-          }).catch((error) => {
-            console.error('Error occurred:', error);
           });
         });
       },
+      
       
       updateEmployeeRole: (promptUserFunction) => {
         db.query(
@@ -170,17 +173,22 @@ const functions = {
             console.error('Error fetching roles:', err);
             return;
           }
-    
+      
           // Clear the table data before adding new rows
           functions.table.length = 0;
-    
-          functions.table.push(['ID', 'Title', 'Salary', 'Department ID']);
-          results.forEach((role) => {
-            functions.table.push([role.id, role.title, role.salary, role.department_id]);
+      
+          const table = new Table({
+            head: ['ID', 'Title', 'Salary', 'Department ID'],
+            colWidths: [5, 20, 15, 15], // Adjust these widths as needed
+            wordWrap: true,
           });
-          
-          console.log(functions.table.toString());
-          console.log('\n'); 
+      
+          results.forEach((role) => {
+            table.push([role.id, role.title, role.salary, role.department_id]);
+          });
+      
+          console.log(table.toString());
+          console.log('\n');
           promptUserFunction();
         });
       },
@@ -225,16 +233,21 @@ const functions = {
             console.error('Error fetching departments:', err);
             return;
           }
-
+      
           functions.table.length = 0;
-
-          functions.table.push(['ID', 'Name']);
-          results.forEach((department) => {
-            functions.table.push([department.id, department.name]);
+      
+          const table = new Table({
+            head: ['ID', 'Name'],
+            colWidths: [5, 20], // Adjust these widths as needed
+            wordWrap: true,
           });
-    
-          console.log(functions.table.toString());
-          console.log('\n'); 
+      
+          results.forEach((department) => {
+            table.push([department.id, department.name]);
+          });
+      
+          console.log(table.toString());
+          console.log('\n');
           promptUserFunction();
         });
       },
