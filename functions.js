@@ -203,9 +203,12 @@ const functions = {
             return;
           }
     
+          const maxNameLength = Math.max(...results.map((department) => department.name.length));
+
           // Clear the table data before adding new rows
           functions.table.length = 0;
-    
+          const nameColumnWidth = maxNameLength + 2; // Adding 2 for better readability
+
           functions.table.push(['ID', 'Name']);
           results.forEach((department) => {
             functions.table.push([department.id, department.name]);

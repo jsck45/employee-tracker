@@ -25,8 +25,13 @@ db.connect((err) => {
 
 function promptUser() {
   inquirerPrompts.start().then((answers) => {
-    console.clear();
-    functions.handleUserChoice(answers.action, promptUser, () => {
+    console.log();
+    functions.handleUserChoice(answers.action, () => {
+      setTimeout(() => {
+        promptUser();
+      }, 1000); // Adjust the delay as needed
+        
+    }, () => {
       // Close the database connection and exit the process
       db.end((err) => {
         if (err) {
@@ -39,6 +44,7 @@ function promptUser() {
     });
   });
 }
+
 
 
 function startApp() {
