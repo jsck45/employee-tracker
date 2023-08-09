@@ -21,7 +21,7 @@ const prompts = {
     ]);
   },
 
-  addEmployeePrompt: () => {
+  addEmployeePrompt: (managerChoices) => {
     return inquirer.prompt([
       {
         type: 'input',
@@ -47,6 +47,12 @@ const prompts = {
           'Legal Team Lead',
           'Lawyer',
         ],
+      },
+      {
+        type: 'list',
+        name: 'manager_id',
+        message: 'Select the employee\'s manager:',
+        choices: managerChoices,
       },
     ]);
   },

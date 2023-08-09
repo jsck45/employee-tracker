@@ -8,24 +8,32 @@ const functions = {
 
     viewAllEmployees: (promptUserFunction) => {
         const query = `
-          SELECT e.id, e.first_name, e.last_name, r.title, d.name AS department, r.salary
+          SELECT 
+            e.id,
+            e.first_name,
+            e.last_name,
+            r.title,
+            d.name AS department,
+            r.salary,
+            IFNULL(CONCAT(m.first_name, ' ', m.last_name), 'NULL') AS manager
           FROM employee e
           INNER JOIN role r ON e.role_id = r.id
           INNER JOIN department d ON r.department_id = d.id
+          LEFT JOIN employee m ON e.manager_id = m.id
         `;
-    
+      
         db.query(query, (err, results) => {
           if (err) {
             console.error('Error fetching employees:', err);
             return;
           }
-    
+      
           const table = new Table({
-            head: ['ID', 'First Name', 'Last Name', 'Title', 'Department', 'Salary'],
-            colWidths: [5, 15, 15, 20, 20, 10],
+            head: ['ID', 'First Name', 'Last Name', 'Title', 'Department', 'Salary', 'Manager'],
+            colWidths: [5, 15, 15, 20, 20, 10, 20],
             wordWrap: true,
           });
-    
+      
           results.forEach((employee) => {
             table.push([
               employee.id,
@@ -34,9 +42,10 @@ const functions = {
               employee.title,
               employee.department,
               employee.salary,
+              employee.manager,
             ]);
           });
-    
+      
           console.log(table.toString());
           console.log('\n'); 
           // After displaying the table, prompt the user back to the main menu
@@ -45,43 +54,58 @@ const functions = {
       },
     
       addEmployee: (promptUserFunction) => {
-        inquirerPrompts.addEmployeePrompt().then((answers) => {
-          const { first_name, last_name, role_id } = answers;
+        // Fetch the list of roles from the database
+        db.query('SELECT id, CONCAT(first_name, " ", last_name) AS manager_name FROM employee', function (err, managerResults) {
+          if (err) {
+            console.error('Error fetching managers:', err);
+            return;
+          }
       
-          // Retrieve the role ID based on the selected role title
-          db.query('SELECT id FROM role WHERE title = ?', [role_id], function (err, roleResults) {
-            if (err) {
-              console.error('Error fetching role ID:', err);
-              return;
-            }
+          const managerChoices = [
+            { name: 'None', value: null }, 
+            ...managerResults.map((manager) => ({
+            name: manager.manager_name,
+            value: manager.id,
+          }))
+        ];
       
-            if (roleResults.length === 0) {
-              console.error('Role not found:', role_id);
-              return;
-            }
+          inquirerPrompts.addEmployeePrompt(managerChoices).then((answers) => {
+            const { first_name, last_name, role_id, manager_id } = answers;
       
-            const roleId = roleResults[0].id;
-      
-            // Insert the employee with the correct role ID
-            db.query(
-              'INSERT INTO employee (first_name, last_name, role_id) VALUES (?, ?, ?)',
-              [first_name, last_name, roleId],
-              function (err, results) {
-                if (err) {
-                  console.error('Error adding employee:', err);
-                } else {
-                  console.log('Employee added successfully!');
-                  console.log(results);
-                  promptUserFunction();
-                }
+            // Retrieve the role ID based on the selected role title
+            db.query('SELECT id FROM role WHERE title = ?', [role_id], function (err, roleResults) {
+              if (err) {
+                console.error('Error fetching role ID:', err);
+                return;
               }
-            );
+      
+              if (roleResults.length === 0) {
+                console.error('Role not found:', role_id);
+                return;
+              }
+      
+              const roleId = roleResults[0].id;
+      
+              // Insert the employee with the correct role ID and manager ID
+              db.query(
+                'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)',
+                [first_name, last_name, roleId, manager_id],
+                function (err, results) {
+                  if (err) {
+                    console.error('Error adding employee:', err);
+                  } else {
+                    console.log(`Employee ${first_name} ${last_name} added successfully!`);
+                    promptUserFunction();
+                  }
+                }
+              );
+            });
+          }).catch((error) => {
+            console.error('Error occurred:', error);
           });
-        }).catch((error) => {
-          console.error('Error occurred:', error);
         });
-      },      
-
+      },
+      
       updateEmployeeRole: (promptUserFunction) => {
         db.query(
           'SELECT e.id, e.first_name, e.last_name, r.title FROM employee e INNER JOIN role r ON e.role_id = r.id',
@@ -161,18 +185,18 @@ const functions = {
         });
       },
 
-    addRole: (promptUserFunction) => {
+      addRole: (promptUserFunction) => {
         db.query('SELECT id, name FROM department', function (err, departmentResults) {
           if (err) {
             console.error('Error fetching departments:', err);
             return;
           }
-    
+      
           const departmentChoices = departmentResults.map((department) => ({
             name: department.name,
             value: department.id,
           }));
-    
+      
           inquirerPrompts
             .addRolePrompt(departmentChoices)
             .then((answers) => {
@@ -183,8 +207,7 @@ const functions = {
                   if (err) {
                     console.error('Error adding role:', err);
                   } else {
-                    console.log('Role added successfully!');
-                    console.log(results);
+                    console.log(`Role "${answers.title}" added successfully!`);
                     promptUserFunction();
                   }
                 }
@@ -194,7 +217,7 @@ const functions = {
               console.error('Error occurred:', error);
             });
         });
-      },
+      },     
 
       viewAllDepartments: (promptUserFunction) => {
         db.query('SELECT * FROM department', function (err, results) {
@@ -202,12 +225,8 @@ const functions = {
             console.error('Error fetching departments:', err);
             return;
           }
-    
-          const maxNameLength = Math.max(...results.map((department) => department.name.length));
 
-          // Clear the table data before adding new rows
           functions.table.length = 0;
-          const nameColumnWidth = maxNameLength + 2; // Adding 2 for better readability
 
           functions.table.push(['ID', 'Name']);
           results.forEach((department) => {
@@ -220,28 +239,27 @@ const functions = {
         });
       },
 
-    addDepartment: (promptUserFunction) => {
-    inquirerPrompts
-      .addDepartmentPrompt()
-      .then((answers) => {
-        db.query(
-          'INSERT INTO department (name) VALUES (?)',
-          [answers.name],
-          function (err, results) {
-            if (err) {
-              console.error('Error adding department:', err);
-            } else {
-              console.log('Department added successfully!');
-              console.log(results);
-              promptUserFunction();
-            }
-          }
-        );
-      })
-      .catch((error) => {
-        console.error('Error occurred:', error);
-      });
-  },
+      addDepartment: (promptUserFunction) => {
+        inquirerPrompts
+          .addDepartmentPrompt()
+          .then((answers) => {
+            db.query(
+              'INSERT INTO department (name) VALUES (?)',
+              [answers.name],
+              function (err, results) {
+                if (err) {
+                  console.error('Error adding department:', err);
+                } else {
+                  console.log(`Department "${answers.name}" added successfully!`);
+                  promptUserFunction();
+                }
+              }
+            );
+          })
+          .catch((error) => {
+            console.error('Error occurred:', error);
+          });
+      },      
   
   handleUserChoice: (choice, promptUserFunction, exitCallback) => {
     if (choice === 'Exit') {
